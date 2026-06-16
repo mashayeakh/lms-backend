@@ -76,7 +76,8 @@ export class AuthService {
 
         //now generate a JWT token for the user
 
-        const payload = { sub: user?._id };
+        //TODO  -> for tsing we set admin
+        const payload = { sub: user?._id, role: 'admin' };
 
         console.log("payload: ", payload);
         const token = await this.jwtService.signAsync(payload)
