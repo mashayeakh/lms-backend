@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { RegisterDto } from './dto/registerDto.dto';
 import * as bcrypt from 'bcrypt';
@@ -10,11 +10,11 @@ export class AuthService {
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService
-
-
     ) {
         this.usersService = usersService;
     }
+
+
     async registerUser(registerDto: RegisterDto) {
 
 
@@ -47,5 +47,45 @@ export class AuthService {
         return {
             token: token,
         };
+    }
+
+    async login(loginDto: {
+        email: string;
+        password: string;
+    }) {
+
+
+        //fetch the user
+        const user = await this.usersService.findByEmail(loginDto.email);
+        console.log("user founddd: ", user);
+
+
+        if (!user) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+
+        //dycript the password and compare with the hashed password in the database
+
+
+        const isMatch = await bcrypt.compare(loginDto.password, user?.password);
+
+        if (!isMatch) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        //now generate a JWT token for the user
+
+        const payload = { sub: user?._id };
+
+        console.log("payload: ", payload);
+        const token = await this.jwtService.signAsync(payload)
+        console.log("token generated: ", token);
+        return {
+            message: "Login successful",
+            name: user?.fname,
+            email: user?.email,
+            token: token,
+        }
     }
 }
